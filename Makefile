@@ -1,5 +1,5 @@
-CXX=G++
-IDIR=/usr/local/Cellar/eigen/3.3.7/include/eigen3
+CXX=g++
+IDIR=./eigen3
 CXXFLAGS=-Wall -g -I$(IDIR) 
 TARGET=lasso
 

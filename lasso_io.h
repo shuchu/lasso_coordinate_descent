@@ -2,5 +2,5 @@
 #include <string>
 #include <Eigen/Dense>
 
-int loadMtxToMatrix(std::string file_name, Eigen::MatrixXd& mat);
+Eigen::MatrixXd loadMtxToMatrix(char* file_name);
 

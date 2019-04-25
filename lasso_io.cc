@@ -20,7 +20,7 @@
 #include "lasso_io.h"
 
 // load matrix from .mtx file into a MatrixXd object
-int loadMtxToMatrix(char* file_name, Eigen::MatrixXd& mat)
+Eigen::MatrixXd loadMtxToMatrix(char* file_name)
 {
     std::FILE *f;
     int ret_code;
@@ -51,13 +51,14 @@ int loadMtxToMatrix(char* file_name, Eigen::MatrixXd& mat)
     if ((ret_code = mm_read_mtx_crd_size(f, &M, &N, &nz)) !=0)
         exit(1);
     
-    // resize the MatrixXd
-    mat.resize(M,N);
+    // create a MatrixXd object
+    Eigen::MatrixXd mat = Eigen::MatrixXd(M,N);
     
     // NOTE: when reading in doubles, ANSI C requires the use of the "l"  
     //   specifier as in "%lg", "%lf", "%le", otherwise errors will occur 
     //  (ANSI C X3.159-1989, Sec. 4.9.6.2, p. 136 lines 13-15)            
-    int m_i(0), m_j(0), val(0);
+    int m_i(0), m_j(0);
+    double val(0);
     for (int i=0; i<nz; i++)
     {
         fscanf(f, "%d %d %lg\n", &m_i, &m_j, &val);
@@ -69,6 +70,6 @@ int loadMtxToMatrix(char* file_name, Eigen::MatrixXd& mat)
     // show loaded matrix shape
     std::cout << "matrix size: ("<< M << "," << N << ")." << std::endl;
 
-    return 0;
+    return mat;
 }
 
