@@ -26,42 +26,39 @@ Eigen::VectorXd lasso(Eigen::MatrixXd& A,
     // add one columne to A if intercept is set to true
     if (intercept){
         A.conservativeResize(A.rows(), A.cols()+1); 
-        A.col(A.cols()-1).setIdentity();  
+        for (int j=0; j < A.rows(); j++)
+            A(j, A.cols()-1) = 1.0;
     }
-    
+
     // initialize solution vector x, with 0.
     Eigen::VectorXd x(A.cols());
     x.setZero();  
-
-    // normalize columns of matrix A
-    Eigen::VectorXd A_norm = A.colwise().squaredNorm();
-    for (int i = 0; i < A_norm.size(); i++) {
-        if (A_norm(i) == 0.0)
-            A_norm(i) = 1.0;
-        else 
-            A_norm(i) = 1.0 / A_norm(i);
+    if (intercept) {
+        x(x.size()-1) = y.sum() / y.size();
     }
-    
-    A = A * (A_norm.asDiagonal());
 
     // main loop for descent
     for (int iter = 0; iter < iter_max; iter++) {
         //coordinate descent
-       
         //pre-calc r = y-AX 
         //following the trick in lecture slides of "coordinate descent"
         //from Geoff Gordon & Ryan Tibshirani at P10.
-        Eigen::VectorXd r = y - A*x;     
+        //Eigen::VectorXd r = y - A*x;     
 
         for (int idx = 0; idx < x.size(); idx++) {
-            double rho = A.col(idx).transpose() * r;
-            if (intercept){
-                if (idx == x.size() -1) x(idx) = rho;
-                else x(idx) = softThresholdingOperator(rho, lambda);
-            }else {
-                x(idx) = softThresholdingOperator(rho, lambda);
-            }       
-        } 
+            Eigen::VectorXd r = y - A*x;     
+            double rho = A.col(idx).transpose()*r + x(idx);
+            x(idx) = softThresholdingOperator(rho, lambda);
+        }
+
+        if (intercept){
+            x(x.size()-1) = (y-A*x).sum()/A.rows();
+        }       
+
+        //info
+        Eigen::VectorXd r = y - A*x;     
+        std::cout <<"ite: " << iter<<" residual: "<< r.norm() << std::endl;
+        
     }
         
     return x;
