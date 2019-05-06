@@ -8,13 +8,13 @@
 #include "lasso.h"
 
 void usage(char* argv[]){
-    printf("%s [sample] [label] [lambda] [max_ite]\n", argv[0]);
+    printf("%s [sample] [label] [lambda] [stepsize] [batch_size] [epoch]\n", argv[0]);
 }
 
 
 int main(int argc, char* argv[])
 {
-    if (argc != 5){
+    if (argc != 7){
         usage(argv);
         return 1;
     }
@@ -22,7 +22,9 @@ int main(int argc, char* argv[])
     char* A_file_name = argv[1];
     char* y_file_name = argv[2];
     double lambda = atof(argv[3]);
-    int max_iter = atoi(argv[4]);
+    double stepsize = atof(argv[4]);
+    int batch_size = atoi(argv[5]);
+    int epoch = atoi(argv[6]);
     
     Eigen::MatrixXd mat_A = loadMtxToMatrix(A_file_name);
     Eigen::MatrixXd mat_y = loadMtxToMatrix(y_file_name);
@@ -45,10 +47,12 @@ int main(int argc, char* argv[])
     //map mat_y into a vector
     Eigen::VectorXd vec_y(Eigen::Map<Eigen::VectorXd>(mat_y.data(), mat_y.cols()*mat_y.rows()));
 
-    bool intercept = false 
+    bool intercept = true; 
 
-    Eigen::VectorXd x = lasso(mat_A, vec_y, lambda, intercept,max_iter); 
+    //Eigen::VectorXd x = lasso(mat_A, vec_y, lambda, intercept,max_iter); 
+    Eigen::VectorXd x = async_lasso(mat_A, vec_y, lambda, stepsize, intercept, batch_size, epoch); 
 
+    std::cout << "coefficients: " << std::endl;
     std::cout << x << std::endl;
 
     return 0;
