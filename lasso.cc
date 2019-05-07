@@ -74,7 +74,7 @@ Eigen::VectorXd async_lasso(Eigen::MatrixXd& A,
           int epoch)
 {
     //Configure rand() seed
-    std::srand(100);
+    //std::srand(100);
     
     // add one columne to A if intercept is set to true
     if (intercept){
@@ -85,7 +85,8 @@ Eigen::VectorXd async_lasso(Eigen::MatrixXd& A,
 
     // initialize solution vector x, with 0.
     Eigen::VectorXd x(A.cols());
-    x.setZero();  
+    for (int i = 0; i < x.size(); i++)
+        x(i) = 1.0;
     if (intercept) {
         x(x.size()-1) = y.sum() / y.size();
     }
@@ -93,36 +94,42 @@ Eigen::VectorXd async_lasso(Eigen::MatrixXd& A,
 
     // pre-compute the (1) A_T*A, (2) b^T*A
     Eigen::MatrixXd AtA = A.transpose()*A;
-    //std::cout << AtA.rows() << "," << AtA.cols() << std::endl;
+    AtA /= A.rows();
     Eigen::MatrixXd btA = y.transpose()*A;
-    //std::cout << btA.rows() << "," << btA.cols() << std::endl;
+    btA /= A.rows();
     
     // main loop for descent
     int cnt = 0;
+    int x_org_size = x.size();
+    double res = -1.0;
+    if (intercept) x_org_size = x.size()-1;
     while(epoch > cnt++) {
         //coordinate descent
         for (int i = 0; i< batch_size; i++) {
-            int idx = rand()%x.size();
+            int idx = rand()%x_org_size;
             double grad_f_x_j = AtA.col(idx).sum()*x(idx) - btA(idx);
+            //calcualte the stepsize
             double update = x(idx) - stepsize*grad_f_x_j;
             //now update
             x(idx) = softThresholdingOperator(update, stepsize*lambda);
         }
 
         if (intercept){
+            x(x.size()-1) = 0.0;
             x(x.size()-1) = (y-A*x).sum()/A.rows();
         }       
 
         //info
         Eigen::VectorXd r = y - A*x;     
-        Eigen::VectorXd tmp = A*x;
+        r /= A.rows();
+        
+        if (fabs(r.norm() - res) < 1e-5) {
+            break;
+        }else
+            res = r.norm();
         
         //debug
-        std::cout << "y size: " << y.rows() << ", " << y.cols() << std::endl;
-        std::cout << "tmp size: " << tmp.rows() << ", " << tmp.cols() << std::endl;
-
-        std::cout <<"epoch: " << cnt <<" residual: "<< r.norm() << ", " << x(x.size()-1) << std::endl;
-        
+        std::cout <<"epoch: " << cnt <<" residual: "<< r.norm() << " x norm: "<< x.norm() << " intercept: " << x(x.size()-1) << std::endl;
     }
         
     return x;
